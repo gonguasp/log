@@ -29,15 +29,12 @@ public class LoggingAspect {
 
     private final ObjectMapper objectMapper;
 
-    @Pointcut("@annotation(io.github.gonguasp.log.annotation.Logging)")
-    public void logWithPointcut() {}
-
-    @Pointcut("@within(io.github.gonguasp.log.annotation.Logging)")
-    public void logClassWithAnnotationPointcut() {}
-
-    @Around("logWithPointcut() || logClassWithAnnotationPointcut()")
-    public Object logPublicMethods(ProceedingJoinPoint joinPoint) throws Throwable {
-        return addLogs(joinPoint, getAnnotation(joinPoint));
+    @Around("@annotation(logging) || @within(logging)")
+    public Object logPublicMethods(ProceedingJoinPoint joinPoint, Logging logging) throws Throwable {
+        if (logging == null) {
+            logging = (Logging) joinPoint.getSignature().getDeclaringType().getDeclaredAnnotation(Logging.class);
+        }
+        return addLogs(joinPoint, logging);
     }
 
     private Object addLogs(ProceedingJoinPoint joinPoint, Logging logging) throws Throwable {
@@ -86,14 +83,5 @@ public class LoggingAspect {
         stringBuilder.append(" ");
         stringBuilder.append(request.getRequestURI());
         return stringBuilder.toString();
-    }
-
-    private Logging getAnnotation(ProceedingJoinPoint joinPoint) {
-        Logging logging = ((MethodSignature) joinPoint.getSignature()).getMethod().getAnnotation(Logging.class);
-        if (logging == null) {
-            logging = (Logging) joinPoint.getSignature().getDeclaringType().getDeclaredAnnotation(Logging.class);
-        }
-
-        return logging;
     }
 }
